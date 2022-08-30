@@ -4,24 +4,36 @@ import { DownOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Space, Typography } from "antd";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {Sprint} from './sprint';
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 
 export function Issues(props) {
   const [type, setType] = useState("Task");
   const [description, setDescription] = useState("");
   const [id, setID] = useState();
   const [status, setStatus] = useState("");
+  const [token, setToken] = useState("");
   const [sprint, setSprint] = useState();
   const [issue, setIssue] = useState([]);
-  const [loading, setLoading] = useState(true);
 
+  const [loading, setLoading] = useState(true);
+  let navigate = useNavigate();
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        const localToken = localStorage.getItem("token")
+        console.log(localToken)
+        if(localToken == null){
+          navigate("/")
+        }
+        else{
+          axios.defaults.headers.common['Authorization'] = `Bearer ${localToken}`;
         const res = await axios.get("http://127.0.0.1:8000/jira/");
-        console.log(res.data);
-        setIssue(res.data);
+        setIssue(res.data);}
       } catch (error) {
         console.error(error.message);
       }
@@ -35,15 +47,13 @@ export function Issues(props) {
 
   const CreateIssue = async () => {
     try {
-      const config = {
-        headers: { Authorization: `Bearer ${"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjo0ODE1NDUyOTgzLCJpYXQiOjE2NjE4NTI5ODMsImp0aSI6ImEwYmQyNmQ1YmEzZTQyYTg5NTNiMmI1OTU4YTc3NDI3IiwidXNlcl9pZCI6MX0.EfH6g4wg7UXrXulu4-JtX4tWG9-5BtozZU6AiRl8vnY"}` }
-    };
+      setLoading(true);
       const res = await axios.post("http://127.0.0.1:8000/jira/", {
         type: type ,
         description: description,
         status: status ,
         sprint: sprint ,
-      },config);
+      });
       if (res.data.sprint != null){
     const newSprint = [...props.sprintsList];
       const foundSprint = newSprint.find(element => element.id == sprint);
@@ -58,10 +68,13 @@ export function Issues(props) {
     } catch (error) {
       console.error(error.message);
     }
+    setLoading(false);
   };
 
   const UpdateIssue = async (id, value, key) => {
     try {
+      
+      
       const res = await axios.patch("http://127.0.0.1:8000/jira/", {
         key: key,
         value: value,
@@ -78,7 +91,6 @@ export function Issues(props) {
         const newSprint = [...props.sprintsList];
         const foundSprint = newSprint.find(element => element.id == value);
         console.log(newSprint);
-        //console.log(foundSprint,sprint);
         foundSprint.issues.push(res.data);
         props.setSprints(newSprint);
         const newIssue = [...issue];
@@ -90,17 +102,19 @@ export function Issues(props) {
         const newIssue = [...issue];
         newIssue[index] = res.data;
         setIssue(newIssue);
-        props.UpdateSprint();
+       
       }
       
     } catch (error) {
       console.error(error.message);
     }
+
   };
 
   
   const deleteIssue = async (id) => {
     try {
+     
       const res = await axios.delete(`http://127.0.0.1:8000/jira/${id}/`, {});
       const index = issue.findIndex((obj) => {
         if (obj.id === parseInt(id)) {
@@ -113,6 +127,7 @@ export function Issues(props) {
     } catch (error) {
       console.error(error.message);
     }
+   
   };
 
   return (

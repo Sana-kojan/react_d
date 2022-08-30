@@ -77,7 +77,7 @@ export function Sprint(props) {
   if(loading) return <div>Loading</div>
   return (
     <>
-        <Issues sprintsList={sprints} setSprints={setSprints}/>
+        <Issues sprintsList={sprints} setSprints={setSprints} token={props.token}/>
         <p>Sprints</p>
     
       <div>
