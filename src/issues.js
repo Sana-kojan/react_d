@@ -4,12 +4,14 @@ import { DownOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Space, Typography } from "antd";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import {Sprint} from './sprint';
 
-export function Issues() {
-  const [type, setType] = useState("");
+export function Issues(props) {
+  const [type, setType] = useState("Task");
   const [description, setDescription] = useState("");
   const [id, setID] = useState();
   const [status, setStatus] = useState("");
+  const [sprint, setSprint] = useState();
   const [issue, setIssue] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,21 +27,34 @@ export function Issues() {
       }
       setLoading(false);
     };
-
+   
     fetchData();
+    
+   
   }, []);
 
   const CreateIssue = async () => {
     try {
+      const config = {
+        headers: { Authorization: `Bearer ${"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjo0ODE1NDUyOTgzLCJpYXQiOjE2NjE4NTI5ODMsImp0aSI6ImEwYmQyNmQ1YmEzZTQyYTg5NTNiMmI1OTU4YTc3NDI3IiwidXNlcl9pZCI6MX0.EfH6g4wg7UXrXulu4-JtX4tWG9-5BtozZU6AiRl8vnY"}` }
+    };
       const res = await axios.post("http://127.0.0.1:8000/jira/", {
-        type: type,
+        type: type ,
         description: description,
-        status: status,
-      });
-      console.log(res.data);
-      const OldArray = [...issue];
+        status: status ,
+        sprint: sprint ,
+      },config);
+      if (res.data.sprint != null){
+    const newSprint = [...props.sprintsList];
+      const foundSprint = newSprint.find(element => element.id == sprint);
+      foundSprint.issues.push(res.data)
+      props.setSprints(newSprint);}
+      else{
+        const OldArray = [...issue];
       OldArray.push(res.data);
       setIssue(OldArray);
+      }
+      
     } catch (error) {
       console.error(error.message);
     }
@@ -52,19 +67,38 @@ export function Issues() {
         value: value,
         id: id,
       });
+      
       const index = issue.findIndex((obj) => {
         if (obj.id === parseInt(id)) {
           return true;
         }
       });
-      const newIssue = [...issue];
-      newIssue[index] = res.data;
-      setIssue(newIssue);
+
+      if(key == "sprint_id"){
+        const newSprint = [...props.sprintsList];
+        const foundSprint = newSprint.find(element => element.id == value);
+        console.log(newSprint);
+        //console.log(foundSprint,sprint);
+        foundSprint.issues.push(res.data);
+        props.setSprints(newSprint);
+        const newIssue = [...issue];
+        newIssue.splice(index,1);
+        setIssue(newIssue);
+        
+      }
+      else{
+        const newIssue = [...issue];
+        newIssue[index] = res.data;
+        setIssue(newIssue);
+        props.UpdateSprint();
+      }
+      
     } catch (error) {
       console.error(error.message);
     }
   };
 
+  
   const deleteIssue = async (id) => {
     try {
       const res = await axios.delete(`http://127.0.0.1:8000/jira/${id}/`, {});
@@ -84,6 +118,7 @@ export function Issues() {
   return (
     <>
       <div>
+        <p>Issues</p>
         {loading && <div>Loading</div>}
         {!loading && (
           <div>
@@ -116,6 +151,23 @@ export function Issues() {
                   <option value="Done">Done</option>
                 </select>
 
+                <select
+                  name="sprint_id"
+                  id="sprint_id"
+                  defaultValue=""
+                  onClick={(e) => {
+                    UpdateIssue(item.id, parseInt(e.target.value), e.target.name);
+                  }}
+                >
+                   <option value=""></option>
+                  {
+                  props.sprintsList.map((option, index) => (
+          <option key={index} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+                </select>
+
                 <div onClick={() => deleteIssue(item.id)}>x</div>
               </>
             ))}
@@ -137,6 +189,7 @@ export function Issues() {
               <option value="Feature">Feature</option>
             </select>
           </Form.Item>
+
           <Form.Item>
             <Input
               placeholder="Description"
@@ -160,12 +213,21 @@ export function Issues() {
           </Form.Item>
 
           <Form.Item>
-            <Input
-              placeholder="ID"
-              onChange={(e) => {
-                setID(e.target.value);
-              }}
-            />
+          <select
+                  name="sprint"
+                  id="sprint"
+                  //defaultValue={item.sprint}
+                  onClick={(e) => {
+                    setSprint(parseInt(e.target.value));
+                  }}
+                >
+                  <option value=""></option>
+                  {props.sprintsList.map((option, index) => (
+          <option key={index} value={option.id}>
+            {option.name}
+          </option>
+        ))}
+                </select>
           </Form.Item>
           <Button
             type="primary"
@@ -187,50 +249,6 @@ export function Issues() {
         </Form>
       </div>
 
-      {/* //     <div>
-    //     <Divider orientation="left">Issues</Divider>
-    //     <Row gutter={[16, 24]}>
-    //     <div>
-    //     {loading && <div>Loading</div>}
-    //     {!loading && ( */}
-      {/* //       <div>
-    //         <ul>
-    //           {issues.map((item) => (
-       
-    //             <>
-                 
-    //             </>
-    //           ))}
-    //         </ul>
-    //       </div>
-    //     )}
-    //   </div>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //       <Col className="gutter-row" span={6}>
-    //         <div style={style}>col-6</div>
-    //       </Col>
-    //     </Row>
-    //     </div> */}
     </>
   );
 }
