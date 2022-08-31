@@ -1,7 +1,6 @@
-//import { Col, Divider, Row } from 'antd';
-import { Form, Input, Button } from "antd";
+import { Form, Input, Button , Select, Modal} from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Space, Typography } from "antd";
+import { Dropdown, Menu, Space, Typography ,Collapse } from "antd";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -9,29 +8,50 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
+import { UserOutlined } from '@ant-design/icons';
+import { Avatar, Image } from 'antd';
+
 
 export function Issues(props) {
   const [type, setType] = useState("Task");
   const [description, setDescription] = useState("");
   const [id, setID] = useState();
   const [status, setStatus] = useState("");
+  const [assignedUser, setAssignedUser] = useState();
   const [token, setToken] = useState("");
+  const [users, setUsers] = useState([]);
   const [sprint, setSprint] = useState();
   const [issue, setIssue] = useState([]);
-
   const [loading, setLoading] = useState(true);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    CreateIssue();
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  const { Option } = Select;
+  const { Panel } = Collapse;
+
   let navigate = useNavigate();
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const localToken = localStorage.getItem("token")
-        console.log(localToken)
-        if(localToken == null){
+      
+        if(axios.defaults.headers.common['Authorization'] == null){
           navigate("/")
         }
         else{
-          axios.defaults.headers.common['Authorization'] = `Bearer ${localToken}`;
+        
         const res = await axios.get("http://127.0.0.1:8000/jira/");
         setIssue(res.data);}
       } catch (error) {
@@ -41,9 +61,18 @@ export function Issues(props) {
     };
    
     fetchData();
-    
+    GetUsers();
    
   }, []);
+
+  const GetUsers = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/users/");
+      setUsers(res.data);}
+    catch (error) {
+      console.error(error.message);
+    }
+  };
 
   const CreateIssue = async () => {
     try {
@@ -53,6 +82,7 @@ export function Issues(props) {
         description: description,
         status: status ,
         sprint: sprint ,
+        user: assignedUser,
       });
       if (res.data.sprint != null){
     const newSprint = [...props.sprintsList];
@@ -72,9 +102,7 @@ export function Issues(props) {
   };
 
   const UpdateIssue = async (id, value, key) => {
-    try {
-      
-      
+    try {  
       const res = await axios.patch("http://127.0.0.1:8000/jira/", {
         key: key,
         value: value,
@@ -96,9 +124,9 @@ export function Issues(props) {
         const newIssue = [...issue];
         newIssue.splice(index,1);
         setIssue(newIssue);
-        
       }
-      else{
+      else
+      {
         const newIssue = [...issue];
         newIssue[index] = res.data;
         setIssue(newIssue);
@@ -133,135 +161,215 @@ export function Issues(props) {
   return (
     <>
       <div>
-        <p>Issues</p>
+      
         {loading && <div>Loading</div>}
         {!loading && (
-          <div>
+          <div style={{width: 900,  
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginLeft: 'auto',
+        marginRight: 'auto'
+          }}>
+            <Collapse className="p-1"  style={{  
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 5
+        
+      }}>
+      <Panel header="Backlog" key="1" type="flex" align="middle" style={{width: 900,}}>
+       
+      
             {issue.map((item) => (
               <>
-                <select
+                <Select
                   name="type"
                   id="type"
                   defaultValue={item.type}
-                  onClick={(e) => {
-                    UpdateIssue(item.id, e.target.value, e.target.name);
+                  onSelect={(value) => {
+                    UpdateIssue(item.id, value, "type");
                   }}
                 >
-                  <option value="Task">Task</option>
-                  <option value="Bug">Bug</option>
-                  <option value="Feature">Feature</option>
-                </select>
+                   <Option value="Task" ><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium" width="16px" height="16px" alt="Task"/>Task</Option>
+              <Option value="Bug"><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium" width="16px" height="16px" alt="Bug"/>Bug</Option>
+              <Option value="Feature"><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10321?size=medium" width="16px" height="16px" alt="Feature"/>Feature</Option>
+            
+                </Select>
                 
                 {`${item.description}`}
-                <select
+                <Select
                   name="status"
                   id="status"
                   defaultValue={item.status}
-                  onClick={(e) => {
-                    UpdateIssue(item.id, e.target.value, e.target.name);
+                  onSelect={(value) => {
+                    UpdateIssue(item.id, value, "status");
                   }}
                 >
-                  <option value="In Progress">In Progress</option>
-                  <option value="Closed">Closed</option>
-                  <option value="Done">Done</option>
-                </select>
+                  <Option value="In Progress">In Progress</Option>
+                  <Option value="Closed">Closed</Option>
+                  <Option value="Done">Done</Option>
+                </Select>
 
-                <select
+                <Select
                   name="sprint_id"
                   id="sprint_id"
                   defaultValue=""
-                  onClick={(e) => {
-                    UpdateIssue(item.id, parseInt(e.target.value), e.target.name);
+                  onChange={(value) => {
+                    UpdateIssue(item.id, parseInt(value), "sprint_id");
                   }}
                 >
-                   <option value=""></option>
+                   <Option value=""></Option>
                   {
                   props.sprintsList.map((option, index) => (
-          <option key={index} value={option.id}>
+          <Option key={index} value={option.id}>
+           
             {option.name}
-          </option>
+          </Option>
         ))}
-                </select>
+                </Select>
+
+                <Select
+                  name="user_id"
+                  id="user_id"
+                  defaultValue=""
+                  style={{width: 300}}
+                  onSelect={(value) => {
+                    UpdateIssue(item.id, value, "user_id");
+                  }}
+                >
+                   <Option value=""></Option>
+                  {
+                  users.map((option, index) => (
+          <Option key={index} value={option.id}>
+             <Avatar className="mx-1"> {option.username[0]}</Avatar>
+            {option.username}
+          </Option>
+        ))}
+                </Select>
 
                 <div onClick={() => deleteIssue(item.id)}>x</div>
               </>
             ))}
+            </Panel></Collapse>
           </div>
         )}
       </div>
       <div>
-        <Form className="login-form">
+
+      <Modal title="Create Issue" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+        <Form className="create Issue-form">
           <Form.Item>
-            <select
+            Issue Type
+            <Select
+            className="mt-2"
               name="types"
               id="types"
-              onClick={(e) => {
-                setType(e.target.value);
+              placeholder="Type"
+                
+              onSelect={(value) => {
+                setType(value);
               }}
+              rules={[
+                {
+                  required: true,
+                  message: 'Please Choose the Issue Type!',
+                },
+              ]}
             >
-              <option value="Task">Task</option>
-              <option value="Bug">Bug</option>
-              <option value="Feature">Feature</option>
-            </select>
+              <Option  value="Task"><img className="mx-1"  src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium" width="16px" height="16px" alt="Task"/>Task</Option>
+              <Option value="Bug"><img className="mx-1"  src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium" width="16px" height="16px" alt="Bug"/>Bug</Option>
+              <Option  value="Feature"><img className="mx-1"  src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10321?size=medium" width="16px" height="16px" alt="Feature"/>Feature</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item>
+            Summary
             <Input
+            className="mt-2"
               placeholder="Description"
               onChange={(e) => {
                 setDescription(e.target.value);
               }}
+              rules={[
+                {
+                  required: true,
+                  message: 'Please Enter Issue Description!',
+                },
+              ]}
             />
           </Form.Item>
           <Form.Item>
-            <select
+            Status
+            <Select
+            className="mt-2"
               name="status"
               id="status"
-              onClick={(e) => {
-                setStatus(e.target.value);
+              placeholder="Status"
+              onSelect={(value) => {
+                setStatus(value);
               }}
             >
-              <option value="In Progress">In Progress</option>
-              <option value="Closed">Closed</option>
-              <option value="Done">Done</option>
-            </select>
+              <Option value="In Progress">In Progress</Option>
+              <Option value="Closed">Closed</Option>
+              <Option value="Done">Done</Option>
+            </Select>
           </Form.Item>
 
           <Form.Item>
-          <select
+            Sprint
+          <Select
+          className="mt-2"
                   name="sprint"
                   id="sprint"
-                  //defaultValue={item.sprint}
-                  onClick={(e) => {
-                    setSprint(parseInt(e.target.value));
+                  placeholder="Sprint"
+                  onSelect={(value) => {
+                    setSprint(parseInt(value));
                   }}
                 >
-                  <option value=""></option>
+                  <Option value=""></Option>
                   {props.sprintsList.map((option, index) => (
-          <option key={index} value={option.id}>
+          <Option key={index} value={option.id}>
+            
             {option.name}
-          </option>
+          </Option>
         ))}
-                </select>
+                </Select>
           </Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            className="login-form-button"
-            onClick={() => CreateIssue()}
-          >
-            Create
-          </Button>
+
+          <Form.Item>
+            Assign to
+          <Select className="mt-2"
+                  name="user_id"
+                  id="user_id"
+                  placeholder="Assign to"
+                  onSelect={(value) => {
+                    setAssignedUser(parseInt(value));
+                  }}
+                >
+                  <Option value=""></Option>
+                  {users.map((option, index) => (
+          <Option key={index} value={option.id}>
+            <Avatar className="mx-1"> {option.username[0]}</Avatar>
+            {option.username}
+          </Option>
+        ))}
+                </Select>
+          </Form.Item>
+
+        </Form>
+      
+
+      </Modal>
 
           <Button
             type="primary"
             htmlType="submit"
             className="login-form-button"
-            onClick={() => UpdateIssue()}
+            onClick={() => showModal()}
           >
-            Update
+            Create
           </Button>
-        </Form>
       </div>
 
     </>
