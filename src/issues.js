@@ -2,6 +2,7 @@ import { Form, Input, Button , Select, Modal} from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Space, Typography ,Collapse } from "antd";
 import React, { useState, useEffect } from "react";
+import { DeleteOutlined, EditOutlined   } from "@ant-design/icons";
 import axios from "axios";
 import {
   useParams,
@@ -19,11 +20,11 @@ export function Issues(props) {
   const [status, setStatus] = useState("");
   const [assignedUser, setAssignedUser] = useState();
   const [token, setToken] = useState("");
-  const [users, setUsers] = useState([]);
   const [sprint, setSprint] = useState();
   const [issue, setIssue] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditModel, setIsEditModel] = useState(false);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -33,6 +34,11 @@ export function Issues(props) {
     CreateIssue();
     setIsModalVisible(false);
   };
+
+  const handleOk2 = () => {
+    setIsModalVisible(false);
+  };
+
 
   const handleCancel = () => {
     setIsModalVisible(false);
@@ -61,18 +67,9 @@ export function Issues(props) {
     };
    
     fetchData();
-    GetUsers();
+  
    
   }, []);
-
-  const GetUsers = async () => {
-    try {
-      const res = await axios.get("http://127.0.0.1:8000/users/");
-      setUsers(res.data);}
-    catch (error) {
-      console.error(error.message);
-    }
-  };
 
   const CreateIssue = async () => {
     try {
@@ -100,45 +97,6 @@ export function Issues(props) {
     }
     setLoading(false);
   };
-
-  const UpdateIssue = async (id, value, key) => {
-    try {  
-      const res = await axios.patch("http://127.0.0.1:8000/jira/", {
-        key: key,
-        value: value,
-        id: id,
-      });
-      
-      const index = issue.findIndex((obj) => {
-        if (obj.id === parseInt(id)) {
-          return true;
-        }
-      });
-
-      if(key == "sprint_id"){
-        const newSprint = [...props.sprintsList];
-        const foundSprint = newSprint.find(element => element.id == value);
-        console.log(newSprint);
-        foundSprint.issues.push(res.data);
-        props.setSprints(newSprint);
-        const newIssue = [...issue];
-        newIssue.splice(index,1);
-        setIssue(newIssue);
-      }
-      else
-      {
-        const newIssue = [...issue];
-        newIssue[index] = res.data;
-        setIssue(newIssue);
-       
-      }
-      
-    } catch (error) {
-      console.error(error.message);
-    }
-
-  };
-
   
   const deleteIssue = async (id) => {
     try {
@@ -179,21 +137,51 @@ export function Issues(props) {
         
       }}>
       <Panel header="Backlog" key="1" type="flex" align="middle" style={{width: 900,}}>
-       
+      <div 
+                style={{  
+                  marginBottom: 5,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  columnGap: 50,
+                  rowGap: 20,
+                  flexDirection: 'column',
+
+                }}>
       
             {issue.map((item) => (
-              <>
+            <div  style={{  
+              display: 'flex',
+              justifyContent: 'center',
+              columnGap: 20,
+              rowGap: 30,
+              
+            }}
+            
+            >
                 <Select
                   name="type"
                   id="type"
+                  style={{
+                  minWidth: 60,  
+                  }
+                  }
                   defaultValue={item.type}
                   onSelect={(value) => {
-                    UpdateIssue(item.id, value, "type");
+                    props.UpdateIssue(item.id, value, "type");
                   }}
                 >
-                   <Option value="Task" ><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium" width="16px" height="16px" alt="Task"/>Task</Option>
-              <Option value="Bug"><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium" width="16px" height="16px" alt="Bug"/>Bug</Option>
-              <Option value="Feature"><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10321?size=medium" width="16px" height="16px" alt="Feature"/>Feature</Option>
+                   <Option style={{
+                  minWidth: 60,  
+                  }
+                  }value="Task" ><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10318?size=medium" width="16px" height="16px" alt="Task"/>Task</Option>
+              <Option style={{
+                  minWidth: 60,  
+                  }
+                  }value="Bug"><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10303?size=medium" width="16px" height="16px" alt="Bug"/>Bug</Option>
+              <Option style={{
+                  minWidth: 60,  
+                  }
+                  }value="Feature"><img className="mx-2" src="https://ordable.atlassian.net/rest/api/2/universal_avatar/view/type/issuetype/avatar/10321?size=medium" width="16px" height="16px" alt="Feature"/>Feature</Option>
             
                 </Select>
                 
@@ -203,7 +191,7 @@ export function Issues(props) {
                   id="status"
                   defaultValue={item.status}
                   onSelect={(value) => {
-                    UpdateIssue(item.id, value, "status");
+                    props.UpdateIssue(item.id, value, "status");
                   }}
                 >
                   <Option value="In Progress">In Progress</Option>
@@ -216,7 +204,7 @@ export function Issues(props) {
                   id="sprint_id"
                   defaultValue=""
                   onChange={(value) => {
-                    UpdateIssue(item.id, parseInt(value), "sprint_id");
+                    props.UpdateIssue(item.id, parseInt(value), "sprint_id");
                   }}
                 >
                    <Option value=""></Option>
@@ -235,28 +223,29 @@ export function Issues(props) {
                   defaultValue=""
                   style={{width: 300}}
                   onSelect={(value) => {
-                    UpdateIssue(item.id, value, "user_id");
+                    props.UpdateIssue(item.id, value, "user_id");
                   }}
                 >
                    <Option value=""></Option>
                   {
-                  users.map((option, index) => (
+                  props.users.map((option, index) => (
           <Option key={index} value={option.id}>
              <Avatar className="mx-1"> {option.username[0]}</Avatar>
             {option.username}
           </Option>
         ))}
                 </Select>
-
-                <div onClick={() => deleteIssue(item.id)}>x</div>
-              </>
+                <EditOutlined onClick={() => {showModal() ;setIsEditModel(true)}}/>
+                <DeleteOutlined onClick={() => deleteIssue(item.id)}/>
+              </div>
             ))}
+            </div>
             </Panel></Collapse>
           </div>
         )}
       </div>
       <div>
-
+      
       <Modal title="Create Issue" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
         <Form className="create Issue-form">
           <Form.Item>
@@ -348,7 +337,7 @@ export function Issues(props) {
                   }}
                 >
                   <Option value=""></Option>
-                  {users.map((option, index) => (
+                  {props.users.map((option, index) => (
           <Option key={index} value={option.id}>
             <Avatar className="mx-1"> {option.username[0]}</Avatar>
             {option.username}
@@ -366,9 +355,16 @@ export function Issues(props) {
             type="primary"
             htmlType="submit"
             className="login-form-button"
+            style={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginLeft: 'auto',
+          marginRight: 'auto'
+            }}
             onClick={() => showModal()}
           >
-            Create
+            Create Issue
           </Button>
       </div>
 
