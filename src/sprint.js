@@ -181,7 +181,7 @@ console.log(sprints)
        
    
       }}>
-               <Panel header={`${item.name}`}  type="flex" align="middle" style={{width: 900,}}>
+               <Panel header={`${item.name}`}  type="flex" align="middle" style={{width: 1100,}}>
                 <div 
                  style={{  
                   marginBottom: 5,
@@ -201,7 +201,7 @@ console.log(sprints)
                  <Select
                  style={{
                   minWidth: 120,  
-                  //flex:2
+                  flex:1
                 }}
                   name="type"
                   id="type"
@@ -219,6 +219,10 @@ console.log(sprints)
                 {`${item2.description}`}
                 </div>
                 <Select
+                style={{
+                  minWidth: 120,  
+                  flex:1
+                }}
                   name="status"
                   id="status"
                   defaultValue={item2.status}
@@ -232,6 +236,10 @@ console.log(sprints)
                 </Select>
 
                 <Select
+                style={{
+                  minWidth: 120,  
+                  flex:1
+                }}
                   name="sprint_id"
                   id="sprint_id"
                   defaultValue=""
@@ -250,10 +258,14 @@ console.log(sprints)
                 </Select>
 
                 <Select
+                style={{
+                  minWidth: 60,  
+                  flex:1
+                }}
                   name="user_id"
                   id="user_id"
                   defaultValue={item2.username}
-                  style={{width: 300}}
+                  //style={{width: 300}}
                   onSelect={(value) => {
                   UpdateIssue(item2.id, value, "user_id");
                   }}

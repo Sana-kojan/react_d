@@ -130,13 +130,13 @@ export function Issues(props) {
         marginRight: 'auto'
           }}>
             <Collapse className="p-1"  style={{  
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 5
+       display: 'flex',
+       justifyContent: 'center',
+       alignItems: 'center',
+       marginBottom: 5
         
       }}>
-      <Panel header="Backlog" key="1" type="flex" align="middle" style={{width: 900,}}>
+      <Panel header="Backlog" key="1" type="flex" align="middle" style={{width: 1100,}}>
       <div 
                 style={{  
                   marginBottom: 5,
